@@ -231,7 +231,7 @@ func randPhoto(allMedia []*photoslibrary.MediaItem) *photoslibrary.MediaItem {
 	chosen := rand.Intn(len(allMedia))
 	for {
 		mi := allMedia[chosen]
-		if mi.MediaMetadata == nil || mi.MediaMetadata.Photo == nil {
+		if mi.MediaMetadata == nil || mi.MediaMetadata.Photo == nil || mi.MediaMetadata.Height > mi.MediaMetadata.Width {
 			chosen = (chosen + 1) % len(allMedia)
 			continue
 		}
