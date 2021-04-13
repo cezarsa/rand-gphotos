@@ -125,7 +125,7 @@ func run() error {
 	}
 
 	for i := 0; i < 20; i++ {
-		err = saveRandPhoto(tc, allMedia, i)
+		err = saveRandPhoto(ctx, cli, tc, allMedia, i)
 		if err != nil {
 			return err
 		}
@@ -133,11 +133,16 @@ func run() error {
 	return nil
 }
 
-func saveRandPhoto(cli *http.Client, allMedia []*photoslibrary.MediaItem, index int) error {
+func saveRandPhoto(ctx context.Context, cli *photoslibrary.Service, tc *http.Client, allMedia []*photoslibrary.MediaItem, index int) error {
 	rand.Seed(time.Now().Unix())
 	mi := randPhoto(allMedia)
-	downloadURL := mi.BaseUrl + "=d"
-	res, err := cli.Get(downloadURL)
+	var err error
+	mi, err = cli.MediaItems.Get(mi.Id).Do()
+	if err != nil {
+		return err
+	}
+	downloadURL := mi.BaseUrl + "=w1024-h1024"
+	res, err := tc.Get(downloadURL)
 	if err != nil {
 		return err
 	}
