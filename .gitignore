@@ -1,3 +1,4 @@
 .token
 .album.json
-img.jpg
+img*.jpg
+build/

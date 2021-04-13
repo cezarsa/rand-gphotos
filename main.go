@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/gphotosuploader/googlemirror/api/photoslibrary/v1"
@@ -123,10 +124,16 @@ func run() error {
 		}
 	}
 
-	return saveRandPhoto(tc, allMedia)
+	for i := 0; i < 20; i++ {
+		err = saveRandPhoto(tc, allMedia, i)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-func saveRandPhoto(cli *http.Client, allMedia []*photoslibrary.MediaItem) error {
+func saveRandPhoto(cli *http.Client, allMedia []*photoslibrary.MediaItem, index int) error {
 	rand.Seed(time.Now().Unix())
 	mi := randPhoto(allMedia)
 	downloadURL := mi.BaseUrl + "=d"
@@ -138,7 +145,11 @@ func saveRandPhoto(cli *http.Client, allMedia []*photoslibrary.MediaItem) error 
 	if res.StatusCode != http.StatusOK {
 		return fmt.Errorf("invalid response: %#v", res)
 	}
-	outFile, err := os.Create("img.jpg")
+	outputDir := os.Getenv("OUTPUT_DIR")
+	if outputDir == "" {
+		outputDir = "."
+	}
+	outFile, err := os.Create(filepath.Join(outputDir, fmt.Sprintf("img-%04d.jpg", index)))
 	if err != nil {
 		return err
 	}
