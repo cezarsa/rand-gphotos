@@ -29,7 +29,11 @@ type authConfig struct {
 }
 
 func parseAuth() (*authConfig, error) {
-	data, err := ioutil.ReadFile(os.Getenv("CONFIG"))
+	configEnv := os.Getenv("CONFIG")
+	if configEnv == "" {
+		return nil, errors.New("required env CONFIG pointing to oauth config file")
+	}
+	data, err := ioutil.ReadFile(configEnv)
 	if err != nil {
 		return nil, err
 	}
@@ -147,6 +151,9 @@ func saveRandPhoto(cli *http.Client, allMedia []*photoslibrary.MediaItem) error 
 
 func loadFreshAlbum(ctx context.Context, cli *photoslibrary.Service) ([]*photoslibrary.MediaItem, error) {
 	wantedAlbum := os.Getenv("ALBUM")
+	if wantedAlbum == "" {
+		return nil, errors.New("required env ALBUM")
+	}
 	var wantedAlbumID string
 	var albumSize int64
 	err := cli.Albums.List().Pages(ctx, func(response *photoslibrary.ListAlbumsResponse) error {
