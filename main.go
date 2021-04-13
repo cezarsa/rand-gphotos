@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"time"
 
 	"github.com/gphotosuploader/googlemirror/api/photoslibrary/v1"
@@ -124,7 +125,12 @@ func run() error {
 		}
 	}
 
-	for i := 0; i < 20; i++ {
+	rand.Seed(time.Now().UnixNano())
+	n, _ := strconv.Atoi(os.Getenv("NPHOTOS"))
+	if n == 0 {
+		n = 20
+	}
+	for i := 0; i < n; i++ {
 		err = saveRandPhoto(ctx, cli, tc, allMedia, i)
 		if err != nil {
 			return err
@@ -134,14 +140,13 @@ func run() error {
 }
 
 func saveRandPhoto(ctx context.Context, cli *photoslibrary.Service, tc *http.Client, allMedia []*photoslibrary.MediaItem, index int) error {
-	rand.Seed(time.Now().Unix())
 	mi := randPhoto(allMedia)
 	var err error
 	mi, err = cli.MediaItems.Get(mi.Id).Do()
 	if err != nil {
 		return err
 	}
-	downloadURL := mi.BaseUrl + "=w1024-h1024"
+	downloadURL := mi.BaseUrl + "=w480-h270-c"
 	res, err := tc.Get(downloadURL)
 	if err != nil {
 		return err
