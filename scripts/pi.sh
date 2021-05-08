@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -eo pipefail
-
 function download_photos() {
     dest=$1
     rm -rf ${dest}
@@ -45,15 +43,22 @@ function load_fs() {
 }
 
 function init_mass_storage() {
-    img_src="/tmp/img-download"
+    img_src="/home/pi/mass_storage/tmp-download"
     img_dest="/home/pi/mass_storage/usb_share"
     fat_file="/home/pi/mass_storage/piusb.bin"
+    log_file="/home/pi/mass_storage/gphotos.log"
+    arg="$1"
+
+    exec >>${log_file}
+    exec 2>&1
+
+    echo "$(date): Script init"
 
     if [ -f ${fat_file} ]; then
         load_fs ${fat_file}
     fi
 
-    if [ $1 == "loadonly" ]; then
+    if [[ "$arg" == "loadonly" ]]; then
         exit 0
     fi
 
@@ -61,9 +66,11 @@ function init_mass_storage() {
     copy_photos ${img_src} ${img_dest} ${fat_file}
 }
 
+set -eo pipefail
 sudo touch /var/lock/init_mass_storage
 sudo chmod 666 /var/lock/init_mass_storage
 (
+    set -eo pipefail
     if ! flock -n 9; then
         echo "lock not available"
         exit 1
