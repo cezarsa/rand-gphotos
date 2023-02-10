@@ -1,5 +1,9 @@
 #!/bin/bash
 
+function log() {
+    echo "$(date +"%F %T.%3N"): $*"
+}
+
 function download_photos() {
     dest=$1
     rm -rf ${dest}
@@ -7,8 +11,9 @@ function download_photos() {
 
     export OUTPUT_DIR=${dest}
     export CONFIG=/home/pi/gphotos-sync-secret.json
+    export NPHOTOS=150
 
-    echo "$(date): Updating photos"
+    log "Updating photos"
     cd /home/pi/rand-gphotos
     ./rand-gphotos-pi
 }
@@ -18,28 +23,28 @@ function copy_photos() {
     img_dest=$2
     fat_file=$3
 
-    echo "$(date): Creating FS"
+    log "Umounting old FS"
     sudo umount ${img_dest} || true
     rm -rf ${img_dest}
     sudo modprobe -r g_mass_storage
     rm -f ${fat_file}
-    sleep 3
+    log "Creating new FS"
     mkdir -p $(dirname ${fat_file})
     dd bs=1M if=/dev/zero of=${fat_file} count=16
     /usr/sbin/mkdosfs ${fat_file} -F 16 -I
     mkdir -p ${img_dest}
     sudo mount -ousers,umask=000 ${fat_file} ${img_dest}
     cp ${img_source}/*.jpg ${img_dest}/
-    sudo umount ${img_dest}
     sudo sync
+    sudo umount ${img_dest}
     load_fs ${fat_file}
 }
 
 function load_fs() {
     fat_file=$1
-    echo "$(date): Loading mass storage device"
-    sleep 3
-    sudo modprobe g_mass_storage file=${fat_file} stall=0 ro=1 removable=0 # nofua=1 iSerialNumber=1
+    log "Loading mass storage device"
+    sudo modprobe g_mass_storage file=${fat_file} stall=0 ro=0 removable=0 idVendor=${RANDOM} idProduct=${RANDOM} iSerialNumber=${RANDOM}
+    log "Loaded mass storage device"
 }
 
 function init_mass_storage() {
@@ -52,13 +57,12 @@ function init_mass_storage() {
     exec >>${log_file}
     exec 2>&1
 
-    echo "$(date): Script init"
-
-    if [ -f ${fat_file} ]; then
-        load_fs ${fat_file}
-    fi
+    log "Script init"
 
     if [[ "$arg" == "loadonly" ]]; then
+        if [ -f ${fat_file} ]; then
+            load_fs ${fat_file}
+        fi
         exit 0
     fi
 
